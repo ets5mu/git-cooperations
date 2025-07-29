@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <button id="dzs" onclick="dianZan()">0</button>
+    <script>
+      function jiaFa(canShu1, canShu2) {
+        let jieGuo = canShu1 + canShu2;
+        return jieGuo;
+      }
+      //   let shuZiYi = 1;
+      //   let shuZiEr = 2;
+      // jiaFa(shuZiYi, shuZiEr);
+
+      function dianZan() {
+        let dianZanShuBiaoQian = window.document.getElementById("dzs");
+        let dianZanShu = parseInt(dianZanShuBiaoQian.innerText);
+        let xinShuZi = dianZanShu + 1;
+        dianZanShuBiaoQian.innerText = xinShuZi;
+        return;
+      }
+
+      function dianZan(uid, bv) {
+        let jiLu = database.get("点赞记录", uid, bv);
+        database.shanChu;
+      }
+    </script>
+  </body>
+</html>
