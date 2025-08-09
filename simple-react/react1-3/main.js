@@ -1,13 +1,20 @@
 function AppContent() {
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
+  // const [usernameClass, setusernametClass] = React.useState("input");
+  const usernameClass = username.length <= 5 ? "input-error" : "input";
+  const passwordClass = password.length <= 7 ? "input-error" : "input";
 
   function handleSubmit(event) {
     event.preventDefault();
     //防止页面重新刷新
 
-    if (username === "" || password === "") {
-      alert('"usename" and "password" are required');
+    // if (username.length <= 5) {
+    //   setusernametClass("input-error");
+    //   return;
+    // }
+
+    if (usernameClass === "input-error" || passwordClass === "input-error") {
       return;
     }
 
@@ -32,14 +39,14 @@ function AppContent() {
       </h2>
       <form onSubmit={handleSubmit} style={{ textAlign: "center" }}>
         <input
-          className="input"
+          className={usernameClass}
           type="text"
           value={username} //input变量和属性值来绑定
           onChange={(event) => setUsername(event.target.value)}
         />
         <br />
         <input
-          className="input"
+          className={passwordClass}
           type="password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}

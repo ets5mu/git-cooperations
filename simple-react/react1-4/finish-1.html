@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>全球城市天气预报</title>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@18/umd/react.development.js"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"
+    ></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #1a2a6c);
+        color: #fff;
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .app-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      header {
+        text-align: center;
+        padding: 30px 0;
+        margin-bottom: 30px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      }
+
+      h1 {
+        font-size: 2.8rem;
+        margin-bottom: 10px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .subtitle {
+        font-size: 1.2rem;
+        color: #ddd;
+        max-width: 600px;
+        margin: 0 auto;
+        line-height: 1.6;
+      }
+
+      .cities-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 25px;
+        margin-top: 20px;
+      }
+
+      .city-card {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .city-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+      }
+
+      .city-header {
+        padding: 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .city-name {
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .country-flag {
+        font-size: 1.5rem;
+      }
+
+      .country-name {
+        font-size: 1.2rem;
+        color: #bbb;
+        font-weight: normal;
+      }
+
+      .forecast-list {
+        padding: 20px;
+      }
+
+      .forecast-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .forecast-item:last-child {
+        border-bottom: none;
+      }
+
+      .date {
+        font-weight: 600;
+        min-width: 120px;
+      }
+
+      .weather-details {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+      }
+
+      .temperature {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      .weather-condition {
+        background: rgba(255, 255, 255, 0.15);
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+      }
+
+      .no-data {
+        padding: 40px 20px;
+        text-align: center;
+        color: #ff9e9e;
+        font-size: 1.2rem;
+      }
+
+      .weather-icon {
+        font-size: 1.8rem;
+        margin-right: 10px;
+        vertical-align: middle;
+      }
+
+      .sunny {
+        color: #ffd700;
+      }
+      .cloudy {
+        color: #a9a9a9;
+      }
+      .rain {
+        color: #1e90ff;
+      }
+      .partly-cloudy {
+        color: #87ceeb;
+      }
+      .thunderstorms {
+        color: #ff4500;
+      }
+
+      @media (max-width: 768px) {
+        .cities-container {
+          grid-template-columns: 1fr;
+        }
+
+        h1 {
+          font-size: 2.2rem;
+        }
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 40px;
+        padding: 20px;
+        color: #ccc;
+        font-size: 0.9rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+
+    <script type="text/babel">
+      const cities = [
+        {
+          name: "New York",
+          country: "USA",
+          flag: "🇺🇸",
+          forecast: [
+            { date: "2024-04-03", temperature: 15, weather: "Partly cloudy" },
+            { date: "2024-04-04", temperature: 17, weather: "Sunny" },
+            { date: "2024-04-05", temperature: 18, weather: "Partly cloudy" },
+            { date: "2024-04-06", temperature: 20, weather: "Rain" },
+            { date: "2024-04-07", temperature: 16, weather: "Thunderstorms" },
+            { date: "2024-04-08", temperature: 14, weather: "Cloudy" },
+            { date: "2024-04-09", temperature: 13, weather: "Partly cloudy" },
+          ],
+        },
+        {
+          name: "London",
+          country: "UK",
+          flag: "🇬🇧",
+          forecast: [
+            { date: "2024-04-03", temperature: 12, weather: "Cloudy" },
+            { date: "2024-04-04", temperature: 14, weather: "Rain" },
+            { date: "2024-04-05", temperature: 15, weather: "Partly cloudy" },
+            { date: "2024-04-06", temperature: 13, weather: "Sunny" },
+            { date: "2024-04-07", temperature: 11, weather: "Cloudy" },
+            { date: "2024-04-08", temperature: 10, weather: "Rain" },
+            { date: "2024-04-09", temperature: 12, weather: "Partly cloudy" },
+          ],
+        },
+        {
+          name: "Tokyo",
+          country: "Japan",
+          flag: "🇯🇵",
+          forecast: [
+            { date: "2024-04-03", temperature: 20, weather: "Sunny" },
+            { date: "2024-04-04", temperature: 21, weather: "Partly cloudy" },
+            { date: "2024-04-05", temperature: 22, weather: "Cloudy" },
+            { date: "2024-04-06", temperature: 19, weather: "Rain" },
+            { date: "2024-04-07", temperature: 18, weather: "Partly cloudy" },
+            { date: "2024-04-08", temperature: 17, weather: "Sunny" },
+            { date: "2024-04-09", temperature: 20, weather: "Cloudy" },
+          ],
+        },
+        {
+          name: "Sydney",
+          country: "Australia",
+          flag: "🇦🇺",
+          forecast: [],
+        },
+        {
+          name: "Beijing",
+          country: "China",
+          flag: "🇨🇳",
+        },
+      ];
+
+      // 获取天气图标函数
+      const getWeatherIcon = (weather) => {
+        if (weather.includes("Sunny"))
+          return <span className="weather-icon sunny">☀️</span>;
+        if (weather.includes("Cloudy"))
+          return <span className="weather-icon cloudy">☁️</span>;
+        if (weather.includes("Rain"))
+          return <span className="weather-icon rain">🌧️</span>;
+        if (weather.includes("Partly cloudy"))
+          return <span className="weather-icon partly-cloudy">⛅</span>;
+        if (weather.includes("Thunderstorms"))
+          return <span className="weather-icon thunderstorms">⛈️</span>;
+        return <span className="weather-icon">🌡️</span>;
+      };
+
+      function MyApp() {
+        return (
+          <div className="app-container">
+            <header>
+              <h1>全球城市天气预报</h1>
+              <p className="subtitle">
+                查看您关心的城市未来三天的天气情况，实时更新，准确可靠
+              </p>
+            </header>
+
+            <div className="cities-container">
+              {cities.map((city) => (
+                <div className="city-card" key={`${city.name}-${city.country}`}>
+                  <div className="city-header">
+                    <h2 className="city-name">
+                      <span className="country-flag">{city.flag}</span>
+                      {city.name}
+                    </h2>
+                    <h3 className="country-name">{city.country}</h3>
+                  </div>
+
+                  {city.forecast && city.forecast.length > 0 ? (
+                    <ul className="forecast-list">
+                      {city.forecast.slice(0, 3).map((day) => (
+                        <li className="forecast-item" key={day.date}>
+                          <div className="date">
+                            {new Date(day.date).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                          <div className="weather-details">
+                            <div className="temperature">
+                              {day.temperature}℃
+                            </div>
+                            <div className="weather-condition">
+                              {getWeatherIcon(day.weather)}
+                              {day.weather}
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="no-data">
+                      <p>⚠️ 无法获取天气数据 ⚠️</p>
+                      <p style={{ marginTop: "10px", fontSize: "0.9rem" }}>
+                        {city.name}的天气信息暂时不可用
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <footer>
+              <p>
+                数据更新于 {new Date().toLocaleString()} | © 2024
+                全球天气预报系统
+              </p>
+            </footer>
+          </div>
+        );
+      }
+
+      const appEl = document.querySelector("#app");
+      const root = ReactDOM.createRoot(appEl);
+      root.render(<MyApp />);
+    </script>
+  </body>
+</html>
