@@ -36,36 +36,6 @@ class XFClient:
         auth_url = url + '?' + urlencode(v)
         return auth_url
 
-    # def _assemble_auth_url(self):
-    #     """生成认证URL（使用讯飞更常见的格式）"""
-    #     from urllib.parse import urlparse
-    #     import _thread as thread
-    #     from time import sleep
-    #     from datetime import datetime
-    #     from hashlib import sha256
-    #     import hmac
-
-    #     url = 'wss://ise-api.xfyun.cn/v2/open-ise'
-    #     host = 'ise-api.xfyun.cn'
-    #     path = '/v2/open-ise'
-    #     date = format_date_time(mktime(datetime.now().timetuple()))
-
-    #     signature_origin = "host: {}\ndate: {}\nGET {} HTTP/1.1".format(host, date, path)
-    #     signature_sha = hmac.new(self.api_secret.encode('utf-8'), signature_origin.encode('utf-8'), digestmod=sha256).digest()
-    #     signature_sha = base64.b64encode(signature_sha).decode(encoding='utf-8')
-
-    #     authorization_origin = 'api_key="{}", algorithm="{}", headers="{}", signature="{}"'.format(
-    #         self.api_key, "hmac-sha256", "host date request-line", signature_sha)
-    #     authorization = base64.b64encode(authorization_origin.encode('utf-8')).decode(encoding='utf-8')
-
-    #     v = {
-    #         "authorization": authorization,
-    #         "date": date,
-    #         "host": host
-    #     }
-    #     auth_url = url + '?' + urlencode(v)
-    #     return auth_url
-
     def evaluate(self, audio_path, text):
         """执行评测的主要方法"""
         auth_url = self._assemble_auth_url()
@@ -75,73 +45,26 @@ class XFClient:
                                    on_error=self.on_error,
                                    on_close=self.on_close)
         ws.run_forever()
-
-    # def on_open(self, ws, audio_path, text):
-    #     """WebSocket连接成功时调用，发送开始帧和音频数据"""
-    #     print("WebSocket连接已打开")
-    #     # 1. 发送开始参数帧
-    #     frame_size = 1280  # 每帧音频大小
-    #     interval = 40  # 发送音频间隔(毫秒)
-    #     sample_rate = 16000 # 音频采样率16k
-    #     format = 1 # 音频格式，1为pcm
-    #     channel = 1 # 声道数，1是单声道
-    #     bits = 16 # 采样位数
-
-    #     start_frame = {
-    #         "common": {"app_id": self.app_id},
-    #         "business": {
-    #             "category": "read_sentence",
-    #             "sub_category": "default",
-    #             "ent": "en_vip",
-    #             "cmd": "ssb",
-    #             "auf": f"audio/L16;rate={sample_rate}",
-    #             "aue": "raw",
-    #             "text": base64.b64encode(text.encode('utf-8')).decode('utf-8'),
-    #             "ttp_skip": True,
-    #             "aus": 1
-    #         },
-    #         "data": {
-    #             "status": 0,
-    #             "format": f"audio/L16;rate={sample_rate}",
-    #             "encoding": "raw",
-    #             "audio": base64.b64encode(self._read_audio(audio_path, frame_size)).decode('utf-8')
-    #         }
-    #     }
-    #     ws.send(json.dumps(start_frame))
-
-    #     # 2. 模拟发送后续音频帧... (为简化Demo，我们一次性发送完所有数据)
-    #     # 在实际应用中，这里应该是一个循环，读取音频文件并分帧发送
-    #     end_frame = {
-    #         "business": {
-    #             "cmd": "auw",
-    #             "aus": 2,
-    #             "aue": "raw"
-    #         },
-    #         "data": {
-    #             "status": 2,
-    #             "format": f"audio/L16;rate={sample_rate}",
-    #             "encoding": "raw",
-    #             "audio": ""
-    #         }
-    #     }
-    #     ws.send(json.dumps(end_frame))
-    def on_open(self, ws, audio_path, text):
-        """WebSocket连接成功时调用，发送开始帧和音频数据"""
+        def on_open(self, ws, audio_path, text):
+            """WebSocket连接成功时调用，发送开始帧和音频数据"""
         print("WebSocket连接已打开")
 
-        # 1. 读取整个音频文件并进行Base64编码
+        # 1. 读取整个音频文件
         try:
             with open(audio_path, 'rb') as f:
-                audio_data = f.read()
-            audio_base64 = base64.b64encode(audio_data).decode('utf-8')
+                self.audio_data = f.read()
         except FileNotFoundError:
             print(f"错误：找不到音频文件 {audio_path}")
             ws.close()
             return
 
-        # 2. 构建并发送起始帧 (status = 0)
-        # 注意：根据错误信息，我们去掉了无效的 'sub_category' 字段，并将 'audio' 改为了 'data'
-        start_frame = {
+        # 2. 计算需要分多少帧 (每帧1280字节)
+        self.frame_size = 1280  # 每帧音频大小
+        self.interval = 40  # 发送音频间隔(毫秒)
+        self.cur_pos = 0  # 当前处理位置
+        
+        # 3. 发送起始参数帧 (不包含音频数据)
+        start_params = {
             "common": {
                 "app_id": self.app_id
             },
@@ -157,14 +80,54 @@ class XFClient:
             },
             "data": {
                 "status": 0,  # 0 表示开始
-                "data": audio_base64,  # 关键修正：字段名从 'audio' 改为 'data'
+                "data": "",   # 起始参数帧不含音频数据
                 "format": "audio/L16;rate=16000",
                 "encoding": "raw"
             }
         }
-        ws.send(json.dumps(start_frame))
+        ws.send(json.dumps(start_params))
+        print("起始参数帧已发送")
 
-        # 3. 构建并发送结束帧 (status = 2)
+        # 4. 开始发送音频数据帧
+        self._send_audio_frames(ws)
+
+    def _send_audio_frames(self, ws):
+        """分帧发送音频数据"""
+        import threading
+        import time
+        
+        # 计算总帧数
+        total_frames = (len(self.audio_data) + self.frame_size - 1) // self.frame_size
+        
+        # 发送音频数据帧
+        while self.cur_pos < len(self.audio_data):
+            # 获取当前帧数据
+            end_pos = min(self.cur_pos + self.frame_size, len(self.audio_data))
+            frame_data = self.audio_data[self.cur_pos:end_pos]
+            
+            # Base64编码
+            frame_base64 = base64.b64encode(frame_data).decode('utf-8')
+            
+            # 构建数据帧
+            data_frame = {
+                "data": {
+                    "status": 1,  # 1 表示中间数据帧
+                    "data": frame_base64,
+                    "format": "audio/L16;rate=16000",
+                    "encoding": "raw"
+                }
+            }
+            
+            # 发送数据帧
+            ws.send(json.dumps(data_frame))
+            
+            # 更新位置
+            self.cur_pos = end_pos
+            
+            # 添加延迟以模拟实时发送
+            time.sleep(self.interval / 1000.0)
+        
+        # 发送结束帧
         end_frame = {
             "data": {
                 "status": 2,  # 2 表示结束
@@ -174,7 +137,7 @@ class XFClient:
             }
         }
         ws.send(json.dumps(end_frame))
-        print("起始帧和结束帧已发送")
+        print(f"所有音频帧已发送完毕，共{total_frames}帧")
 
     def on_message(self, ws, message):
         """收到服务器消息时调用"""
